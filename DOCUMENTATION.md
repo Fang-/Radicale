@@ -338,16 +338,11 @@ removed from the example below.
 
 Example **nginx** configuration:
 
-See for latest examples: https://github.com/Kozea/Radicale/tree/master/contrib/nginx/
-
 ```nginx
 location /radicale/ { # The trailing / is important!
     proxy_pass        http://localhost:5232/; # The / is important!
     proxy_set_header  X-Script-Name /radicale;
     proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header  X-Forwarded-Host $host;
-    proxy_set_header  X-Forwarded-Port $server_port;
-    proxy_set_header  X-Forwarded-Proto $scheme;
     proxy_set_header  Host $http_host;
     proxy_pass_header Authorization;
 }
@@ -366,8 +361,6 @@ handle_path /radicale/* {
 
 Example **Apache** configuration:
 
-See for latest examples: https://github.com/Kozea/Radicale/tree/master/contrib/apache/
-
 ```apache
 RewriteEngine On
 RewriteRule ^/radicale$ /radicale/ [R,L]
@@ -377,7 +370,10 @@ RewriteRule ^/radicale$ /radicale/ [R,L]
     ProxyPassReverse http://localhost:5232/
     RequestHeader    set X-Script-Name /radicale
     RequestHeader    set X-Forwarded-Port "%{SERVER_PORT}s"
-    RequestHeader    set X-Forwarded-Proto expr=%{REQUEST_SCHEME}
+    RequestHeader    unset X-Forwarded-Proto
+    <If "%{HTTPS} =~ /on/">
+    RequestHeader    set X-Forwarded-Proto "https"
+    </If>
 </Location>
 ```
 
@@ -1170,6 +1166,11 @@ In some clients you can just enter the URL of the Radicale server
 (e.g. `http://localhost:5232`) and your username. In others, you have to
 enter the URL of the collection directly
 (e.g. `http://localhost:5232/user/calendar`).
+
+Some clients (notably macOS's Calendar.app) may silently refuse to include
+account credentials over unsecured HTTP, leading to unexpected authentication
+failures. In these cases, you want to make sure the Radicale server is
+[accessible over HTTPS](#ssl).
 
 #### DAVx⁵
 
